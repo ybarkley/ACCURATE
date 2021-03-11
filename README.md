@@ -1,2 +1,2 @@
 # accurate
-Examining cue rate for sperm whales in Hawaiian waters
+Examining cue rate variability for sperm whales in Hawaiian waters
