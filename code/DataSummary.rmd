@@ -1,0 +1,160 @@
+---
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(gtsummary)
+library(tidyverse)
+library(janitor)
+library(reshape2)
+library(here)
+
+#### PhD Data ####
+# Load basic csv of all ac. encounters used for PHD Chp 3
+data <- read.csv(here::here('./data/SpermiesWithEnvData_20200531.csv'))
+
+#remove 1642 cruise, data were too noisy
+data <- filter(data, survey != 1642)
+
+#add survey year
+data$year <- 2010
+data$year[data$survey==1303] <- 2013 
+data$year[data$survey==1604] <- 2016
+data$year[data$survey==1705] <- 2017
+data$year[data$survey==1706] <- 2017
+# data2 <- dplyr::select(data, last_col(), everything())
+
+
+####FILTER DATA ####
+
+## filter for LOCALIZED acoustic encounters
+dataLoc <- filter(data, loc == 1 & type == 'best'& peak=='A' & itrk == 1)
+
+#----choose one peak and best type (out of min, max, best of peak A or B) with coda
+dataCodaLoc <- filter(dataLoc, loc == 1 & type == 'best'& peak=='A', rating >=1, grepl('cd', click_code), sid==999)
+
+#----choose one peak and best type (out of min, max, best of peak A or B) withOUT coda
+dataNoCodaLoc <- filter(dataLoc, loc == 1 & type == 'best'& peak=='A', rating >=1, !grepl('cd', click_code), sid==999)
+
+
+## filter by sightings with & without codas
+dataCodaVis <- filter(data, sid<999, rating >=1, grepl('cd', click_code))
+dataCoda <- rbind(dataCodaLoc, dataCodaVis)
+dataCoda$label <- ifelse(dataCoda$loc == 1, 'localized', 'sighted')
+
+dataNoCodaVis <- filter(data, sid<999, rating >=2, !grepl('cd', click_code))
+dataCodaNone <- rbind(dataNoCodaLoc, dataNoCodaVis)
+dataCodaNone$label <- ifelse(dataCodaNone$loc == 1, 'localized', 'sighted')
+
+## Tables
+#with janitor #USE THIS ONE  
+dataCodaLoc %>% tabyl(click_code, year) #localized only
+
+tabylCoda <- dataCoda %>% tabyl(click_code, year, label) %>%
+  adorn_totals(where = c("row", "col"))
+
+tabylCodaNone <- dataCodaNone %>% tabyl(click_code, year, label) %>%
+  adorn_totals(where = c("row", "col"))
+
+#combine lists
+tabylCodaAll <- mapply(rbind, tabylCoda, tabylCodaNone, SIMPLIFY = FALSE)
+
+#save lists
+write.csv(tabylCodaAll, here::here('./data/Spermie Data-2021-TotalTabyls.csv'), row.names = FALSE )
+
+
+
+# bin the group sizes separately for sighted data separately for coda/no coda
+dataVisCoda <- filter(dataCoda, label == 'sighted')
+dataVisCoda$grpsizebin <- cut(dataVisCoda$grpsize, 5, include.lowest = TRUE)
+
+dataVisCodaNone <- filter(dataCodaNone, label == 'sighted')
+dataVisCodaNone$grpsizebin <- cut(dataVisCodaNone$grpsize, 5, include.lowest = TRUE)
+
+tabylVisCoda <- dataVisCoda %>% tabyl(click_code, grpsizebin) %>%
+  adorn_totals(where = c("row", "col"))
+
+tabylVisCodaNone <- dataVisCodaNone %>% tabyl(click_code, grpsizebin) %>%
+  adorn_totals(where = c("row", "col"))
+
+
+## OR ##
+# separate sighted data and make column for coda/no coda, then bin all group sizes
+
+dataVisCoda <- filter(dataCoda, label == 'sighted')
+dataVisCoda$clickbin <- 'coda'
+
+dataVisCodaNone <- filter(dataCodaNone, label == 'sighted')
+dataVisCodaNone$clickbin <- 'no_coda'
+
+dataVis <- rbind(dataVisCoda, dataVisCodaNone)
+dataVis$grpsizebin <- cut(dataVis$grpsize, 5, include.lowest = TRUE)
+
+tabylVis <- dataVis %>% tabyl(click_code, grpsizebin, clickbin) %>%
+  adorn_totals(where = c("row", "col"))
+
+# #combine lists
+# tabylCodaVisAll <- mapply(rbind,tabylVisCoda,tabylVisCodaNone, SIMPLIFY = FALSE)
+
+#save lists
+write.csv(tabylVis, here::here('./data/Spermie Data-2021-TotalTabylVis.csv'), row.names = FALSE )
+
+#graphically present data by group size bins
+p = ggplot(data=dataVis,
+       mapping = aes(x=grpsizebin, fill = clickbin)) +
+  geom_bar(position = 'dodge') +
+  xlab("Group Size Bins") +
+  ylab("Number of Encounters") +
+  ggtitle("Binned Group Sizes by Coda/No Coda") + 
+  scale_fill_manual(name="",
+                         labels=c("Coda", "No Coda"),
+                      values=c("purple1", "yellowgreen"))
+
+#WITHIN Groups < 7
+
+dataVis7 <- filter(dataVis, grpsize <= 10, clickbin=='no_coda')
+
+p=ggplot(data=dataVis7,
+       mapping = aes(x=grpsize, fill = click_code)) +
+  geom_histogram() +
+  xlab("Group Size") +
+  ylab("Number of Encounters") +
+  ggtitle("Group Sizes < 10")  +
+  
+scale_fill_manual(name="",
+                         labels=c("Creaks / Regular / Slow", "Regular", "Regular / Slow", "Slow"),
+                      values=c("yellowgreen", "#66ced6", "#FF84E8", "#7F2CCB"))
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+#Table by year
+#with gtsummary
+dataCodaLoc %>%
+  select(click_code, year) %>%
+  tbl_summary(by = year,
+              missing = 'no', percent = "cell") %>%
+  modify_spanning_header(all_stat_cols() ~ "**Localized 'Good' Acoustic Encounters**")%>% add_n()#%>%
+  bold_labels()
+  
+  
+dataCoda %>% filter(label == 'localized') %>%
+  tabyl(click_code, year) %>%
+  # adorn_totals(c("row", "col"), name='Total Encounters') %>%
+  adorn_title("combined", row_name = 'Click Type', col_name = 'Survey Year') %>%
+  knitr::kable()  
+  
+  
+```
+
