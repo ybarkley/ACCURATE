@@ -1,4 +1,6 @@
 ---
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -17,7 +19,9 @@ library(tidyverse)
 library(janitor)
 library(reshape2)
 library(here)
+```
 
+```{r}
 #### PhD Data ####
 # Load basic csv of all ac. encounters used for PHD Chp 3
 data <- read.csv(here::here('./data/SpermiesWithEnvData_20200531.csv'))
@@ -55,7 +59,7 @@ dataNoCodaVis <- filter(data, sid<999, rating >=2, !grepl('cd', click_code))
 dataCodaNone <- rbind(dataNoCodaLoc, dataNoCodaVis)
 dataCodaNone$label <- ifelse(dataCodaNone$loc == 1, 'localized', 'sighted')
 
-## Tables
+#### Tables ####
 #with janitor #USE THIS ONE  
 dataCodaLoc %>% tabyl(click_code, year) #localized only
 
@@ -74,17 +78,17 @@ write.csv(tabylCodaAll, here::here('./data/Spermie Data-2021-TotalTabyls.csv'), 
 
 
 # bin the group sizes separately for sighted data separately for coda/no coda
-dataVisCoda <- filter(dataCoda, label == 'sighted')
-dataVisCoda$grpsizebin <- cut(dataVisCoda$grpsize, 5, include.lowest = TRUE)
-
-dataVisCodaNone <- filter(dataCodaNone, label == 'sighted')
-dataVisCodaNone$grpsizebin <- cut(dataVisCodaNone$grpsize, 5, include.lowest = TRUE)
-
-tabylVisCoda <- dataVisCoda %>% tabyl(click_code, grpsizebin) %>%
-  adorn_totals(where = c("row", "col"))
-
-tabylVisCodaNone <- dataVisCodaNone %>% tabyl(click_code, grpsizebin) %>%
-  adorn_totals(where = c("row", "col"))
+# dataVisCoda <- filter(dataCoda, label == 'sighted')
+# dataVisCoda$grpsizebin <- cut(dataVisCoda$grpsize, 5, include.lowest = TRUE)
+# 
+# dataVisCodaNone <- filter(dataCodaNone, label == 'sighted')
+# dataVisCodaNone$grpsizebin <- cut(dataVisCodaNone$grpsize, 5, include.lowest = TRUE)
+# 
+# tabylVisCoda <- dataVisCoda %>% tabyl(click_code, grpsizebin) %>%
+#   adorn_totals(where = c("row", "col"))
+# 
+# tabylVisCodaNone <- dataVisCodaNone %>% tabyl(click_code, grpsizebin) %>%
+#   adorn_totals(where = c("row", "col"))
 
 
 ## OR ##
@@ -114,31 +118,220 @@ p = ggplot(data=dataVis,
   geom_bar(position = 'dodge') +
   xlab("Group Size Bins") +
   ylab("Number of Encounters") +
-  ggtitle("Binned Group Sizes by Coda/No Coda") + 
+  ggtitle("Binned Group Sizes by Codas/No Codas") + 
   scale_fill_manual(name="",
-                         labels=c("Coda", "No Coda"),
-                      values=c("purple1", "yellowgreen"))
+                         labels=c("Codas", "No Codas"),
+                      values=c("purple1", "yellowgreen"))  +
+  theme(legend.text = element_text(size = 20),
+        axis.title.x = element_text(size=20),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=20),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=25))
 
-#WITHIN Groups < 7
+#WITHIN Groups < 10, no codas
 
-dataVis7 <- filter(dataVis, grpsize <= 10, clickbin=='no_coda')
+dataVis10 <- filter(dataVis, grpsize <= 10, clickbin=='no_coda')
 
-p=ggplot(data=dataVis7,
+dataVis2 <- filter(dataVis, grpsize < 2, clickbin=='no_coda')
+
+p=ggplot(data=dataVis10,
        mapping = aes(x=grpsize, fill = click_code)) +
   geom_histogram() +
   xlab("Group Size") +
   ylab("Number of Encounters") +
-  ggtitle("Group Sizes < 10")  +
+  ggtitle("Group Sizes < 10, No Codas")  +
   
 scale_fill_manual(name="",
                          labels=c("Creaks / Regular / Slow", "Regular", "Regular / Slow", "Slow"),
-                      values=c("yellowgreen", "#66ced6", "#FF84E8", "#7F2CCB"))
+                      values=c("yellowgreen", "#2e86ab", "#f0803c", "purple1")) +
+  theme(legend.text = element_text(size = 16),
+        axis.title.x = element_text(size=20),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=20),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=25))
+
+
+#### For all 'No Coda' groups, what kind of clicks are present? #####
+
+pNoCoda <- ggplot(data=dataCodaNone,
+       mapping = aes(x=click_code, fill = label)) +
+  geom_bar(position = 'dodge') +
+ xlab("Click Type") +
+  ylab("Number of Encounters") +
+  ggtitle("Click Types - No Codas") + 
+  scale_fill_manual(name="",
+                         labels=c("Localized", "Sighted"),
+                      values=c("#2e86ab", "#f0803c"))  +
+  theme(legend.text = element_text(size = 20),
+        axis.title.x = element_text(size=20),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=20),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=25))
+
+
+pCoda <- ggplot(data=dataCoda,
+       mapping = aes(x=click_code, fill = label)) +
+  geom_bar(position = 'dodge') +
+ xlab("Click Type") +
+  ylab("Number of Encounters") +
+  ggtitle("Click Types - With Codas") + 
+  scale_fill_manual(name="",
+                         labels=c("Localized", "Sighted"),
+                      values=c("#2e86ab", "#f0803c"))  +
+  theme(legend.text = element_text(size = 20),
+        axis.title.x = element_text(size=20),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=20),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=25))
 
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
+
+#Localized vs Sighted - NO CODA
 ```{r}
+
+ggplot(data=dataCodaNone,
+       mapping = aes(x=click_code, fill = label)) +
+  geom_bar(position = 'dodge') +
+ xlab("Click Type") +
+  ylab("Number of Encounters") +
+  ggtitle("Click Types - No Codas") + 
+  scale_fill_manual(name="",
+                         labels=c("Localized", "Sighted"),
+                      values=c("#2e86ab", "#f0803c"))  +
+  theme(legend.text = element_text(size = 20),
+        axis.title.x = element_text(size=20),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=20),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=25))
+
+
+```
+
+#All Acoustics Only vs Sighted - NO CODA
+```{r}
+#convert negative distances to normal distances
+dataCodaNone$dist <- ifelse(dataCodaNone$pdist <0, dataCodaNone$pdist*(-1), dataCodaNone$pdist)
+
+#plotting only whales less than 6 km away
+dataCloseWhales <- dataCodaNone %>% filter(dist < 4, rating >1) %>%
+  select(ID, survey, acid, sid, UTC, lat, lon, nclk, minutes, grpsize, click_code, array, year, label, dist)
+
+#Simple histogram of close whales by click type
+ggplot(data=dataCloseWhales,
+       mapping = aes(x=click_code)) +#, fill = label)) +
+  geom_bar(position = 'dodge') +
+ xlab("Click Type") +
+  ylab("Number of Encounters") +
+  ggtitle("Whales < 4km away") + 
+  
+  theme(legend.text = element_text(size = 20),
+        axis.title.x = element_text(size=20),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=20),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=25)) #+
+# scale_fill_manual(name="",
+#                          labels=c("Localized", "Sighted"),
+#                       values=c("#2e86ab", "#f0803c"))  +
+
+
+dataCloseVis <- filter(dataCloseWhales, sid <999)
+
+dataCloseVis$grpsizebin <- cut(dataCloseVis$grpsize, 10, include.lowest = TRUE)
+
+## Plot group size bins for close whales < 4km
+
+ggplot(data=dataCloseVis,
+       mapping = aes(x=grpsize, fill = click_code)) +
+  geom_histogram(binwidth = 2) +
+  xlab("Group Size") +
+  ylab("Number of Encounters") +
+  ggtitle("Group Sizes for Sighted Whales < 4km (no codas)") + 
+  scale_fill_manual(name="",
+                          labels= c("Creaks / Regular", "Creaks / Regular / Slow", "Regular / Slow", "Slow"),
+                      values=c("yellowgreen", "#2e86ab", "#f0803c", "purple1"))  +
+  theme(legend.text = element_text(size = 15),
+        axis.title.x = element_text(size=15),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=15),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=20))
+
+#LOCALIZED CLOSE WHALES
+
+dataCloseLoc <- filter(dataCloseWhales, sid==999)
+
+ggplot(data=dataCloseLoc,
+       mapping = aes(x=click_code, fill=click_code)) +
+  geom_bar() +
+ xlab("Click Type") +
+  ylab("Number of Encounters") +
+  ggtitle("Click Types for Acoustic-Only Whales < 4km (no codas)") + 
+  scale_fill_manual(name="",
+                          labels= c("Creaks / Regular", "Regular", "Regular / Slow", "Slow"),
+                      values=c("yellowgreen", "deepskyblue", "#f0803c", "purple1")) +
+ 
+  theme(legend.text = element_text(size = 15),
+        axis.title.x = element_text(size=15),
+           axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(size=15),
+           axis.text.y  = element_text(size=16),
+        plot.title = element_text(size=20))
+
+```
+
+
+#UNLOCALIZED DATA
+```{r}
+data2 <- read.csv(here::here('./data/SpermiesFinal_20200919.csv'))
+
+dataNoLoc <- filter(data2, loc==0 & sid==999)
+
+#how many non-localized have codas?
+
+dataCodaNoLoc <- filter(dataNoLoc, grepl('cd', click_code), sid==999)
+dataNoCodaNoLoc <- filter(dataNoLoc, !grepl('cd', click_code), sid==999)
+
+dataNoLoc %>% tabyl(click_code, survey)
+```
+
+
+#NONACOUSTIC DATA
+```{r}
+data2 <- read.csv(here::here('./data/SpermiesFinal_20200919.csv'))
+
+dataNoAc <- filter(data2, acid==999, survey != 1642)
+ggplot(data=dataNoAc,
+       mapping = aes(x=grpsize)) +
+  geom_histogram(binwidth = 1) +
+  xlab("Group Size") +
+  ylab("Number of Encounters")
+
+
+#how many non-localized have codas?
+
+dataCodaNoLoc <- filter(dataNoLoc, grepl('cd', click_code), sid==999)
+dataNoCodaNoLoc <- filter(dataNoLoc, !grepl('cd', click_code), sid==999)
+
+dataNoLoc %>% tabyl(click_code, survey)
+```
+
+
+
+
+
+Other table methods
+```{r}
+## OTHER TABLE METHODS ##
+
 #Table by year
 #with gtsummary
 dataCodaLoc %>%

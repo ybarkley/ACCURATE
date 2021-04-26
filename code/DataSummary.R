@@ -4,6 +4,9 @@
 
 library(gtsummary)
 library(tidyverse)
+library(janitor)
+library(reshape2)
+
 
 #### PhD Data ####
 # Load basic csv of ac. encounters used for PHD
@@ -20,18 +23,48 @@ data$year[data$survey==1705] <- 2017
 data$year[data$survey==1706] <- 2017
 # data2 <- dplyr::select(data, last_col(), everything())
 
-#filter for localized acoustic encounters, choose one peak from best estimates
-data_loc <- filter(data, loc == 1 & type == 'best'& peak=='A')
 
-data_loc %>%
-  select(loc, click_code, rating, year) %>%
+####FILTER DATA ####
+
+#filter for localized acoustic encounters, choose one peak from best estimates
+dataCodaLoc <- filter(data, loc == 1 & type == 'best'& peak=='A', rating >=2, grepl('cd', click_code), sid==999)
+
+#filter by sightings with codas
+dataCodaVis <- filter(data, sid<999, rating >=2, grepl('cd', click_code))
+dataCoda <- rbind(dataCodaLoc, dataCodaVis)
+dataCoda$label <- ifelse(dataCoda$loc == 1, 'localized', 'sighted')
+
+
+
+
+
+
+#Table by year
+#with gtsummary
+dataLocCoda %>%
+  select(click_code, year) %>%
   tbl_summary(by = year,
               missing = 'no') %>%
-  modify_spanning_header(all_stat_cols() ~ "**Acoustic Encounters**")
+  modify_spanning_header(all_stat_cols() ~ "**Localized 'Good' Acoustic Encounters**")%>% add_n() %>%
+  bold_labels()
 
 
-#filter for sighted acoustic encounters without codas with group size < 2
-data_vis <- filter(data, sid < 999, !grepl('cd', click_code), grpsize < 5, rating >1)
+#with janitor
+dataCoda %>% tabyl(click_code, year, label)
+
+
+dataCoda %>% filter(label == 'localized') %>%
+  tabyl(click_code, year) %>%
+  # adorn_totals(c("row", "col"), name='Total Encounters') %>%
+  adorn_title("combined", row_name = 'Click Type', col_name = 'Survey Year') %>%
+  knitr::kable()
+
+
+
+
+
+#filter for sighted acoustic encounters without codas 
+data_vis <- filter(data, sid < 999, !grepl('cd', click_code), grpsize < 3, rating >2)
 
 data_vis %>%
   select(click_code, rating, grpsize, year) %>%
@@ -47,17 +80,10 @@ data_vis %>%
 
 ##### WHICEAS Data ####
 
-data_whiceas <- read.csv('./data/WHICEAS/WHICEAS_AcousticDetections_raw.csv')
-data_whiceas <- data_whiceas[-c(1,4,7,8)]
-data_whiceas$cruiseID <- 2001
-#add identifier (survey.acid.sid)
-data_whiceas$Label <-paste(2001, paste('A',data_whiceas$ac_id,sep=""), paste('S',data_whiceas$vis_id, sep=""), sep=".")
 
-#duplicate Comments to put one in the beginning of df
-data_whiceas$Comment2 <- data_whiceas$Comment
 
-data_whiceas <- select(data_whiceas, cruiseID, Label, Comment2, everything())
-data_whiceas <- rename(data_whiceas, Id = UID, latitude = latlong_LAT, longitude = latlong_LON, sid = vis_id)
+data_whiceas <- read.csv('./data/WHICEAS/WHICEAS_AcousticDetections_edit.csv')
+
 
 data_pm <- filter(data_whiceas, species1_class1 == 46) #all whiceas spermies
 data_pmVis <- filter(data_whiceas, species1_class1 == 46 & sid < 999)
