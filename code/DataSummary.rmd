@@ -220,9 +220,12 @@ ggplot(data=dataCodaNone,
 #convert negative distances to normal distances
 dataCodaNone$dist <- ifelse(dataCodaNone$pdist <0, dataCodaNone$pdist*(-1), dataCodaNone$pdist)
 
-#plotting only whales less than 6 km away
+#### CLOSE WHALES - ALL ####
+#plotting only whales less than 4 km away
 dataCloseWhales <- dataCodaNone %>% filter(dist < 4, rating >1) %>%
-  select(ID, survey, acid, sid, UTC, lat, lon, nclk, minutes, grpsize, click_code, array, year, label, dist)
+  select(ID, survey, acid, sid, UTC, lat, lon, nclk, minutes, grpsize, click_code, array, year, label, dist, rating)
+
+write.csv(dataCloseWhales, here::here('./data/Spermie Data-2021-CloseWhales4km.csv'), row.names = FALSE )
 
 #Simple histogram of close whales by click type
 ggplot(data=dataCloseWhales,
@@ -242,7 +245,7 @@ ggplot(data=dataCloseWhales,
 #                          labels=c("Localized", "Sighted"),
 #                       values=c("#2e86ab", "#f0803c"))  +
 
-
+## CLOSE WHALES - SIGHTED ####
 dataCloseVis <- filter(dataCloseWhales, sid <999)
 
 dataCloseVis$grpsizebin <- cut(dataCloseVis$grpsize, 10, include.lowest = TRUE)
@@ -265,7 +268,7 @@ ggplot(data=dataCloseVis,
            axis.text.y  = element_text(size=16),
         plot.title = element_text(size=20))
 
-#LOCALIZED CLOSE WHALES
+##CLOSE WHALES - LOCALIZED ####
 
 dataCloseLoc <- filter(dataCloseWhales, sid==999)
 
@@ -289,7 +292,7 @@ ggplot(data=dataCloseLoc,
 ```
 
 
-#UNLOCALIZED DATA
+#UNLOCALIZED DATA with CODA
 ```{r}
 data2 <- read.csv(here::here('./data/SpermiesFinal_20200919.csv'))
 
