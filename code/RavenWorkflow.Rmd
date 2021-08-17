@@ -1,0 +1,37 @@
+---
+title: "Make Raven Selection Table"
+author: "Yvonne Barkley"
+date: "8/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(here)
+library(tidyverse)
+```
+
+
+```{r}
+crz = 1706
+acid = 154
+sid = 999
+thr_RL = 30
+encID <- paste0('LF_', crz, '.A', acid, '.S', sid)
+encID <- paste0(crz, 'A', acid, 'S', sid)
+
+chan = 6
+
+detTime = read.table( paste0(here::here('data/CloseWhale4km', encID, '/metadata/', paste0(encID, '_DetStart_RavenFile.csv')) ))
+peakFreq = read.table( paste0(here::here('data/CloseWhale4km', encID, '/metadata/', paste0(encID, '_PeakFreq_RavenFile.csv')) ))
+colnames(peakFreq) <- 'peakFreq'
+```
+```{r}
+#run function to make raven table
+
+makeRavenTable(encID, chan, detTime, peakFreq, thr_RL)
+```
+
