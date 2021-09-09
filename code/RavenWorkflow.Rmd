@@ -14,24 +14,51 @@ library(here)
 library(tidyverse)
 ```
 
-
+#Set Up Data
 ```{r}
 crz = 1706
-acid = 154
-sid = 999
-thr_RL = 30
-encID <- paste0('LF_', crz, '.A', acid, '.S', sid)
+acid = 271
+sid = 131
+thr_RL = 50
+# encID <- paste0('LF_', crz, '.A', acid, '.S', sid)
 encID <- paste0(crz, 'A', acid, 'S', sid)
 
 chan = 6
 
+options(digits = 10)
 detTime = read.table( paste0(here::here('data/CloseWhale4km', encID, '/metadata/', paste0(encID, '_DetStart_RavenFile.csv')) ))
 peakFreq = read.table( paste0(here::here('data/CloseWhale4km', encID, '/metadata/', paste0(encID, '_PeakFreq_RavenFile.csv')) ))
 colnames(peakFreq) <- 'peakFreq'
+
+#save selection table path
+savePath = here::here('data/CloseWhale4km/RavenSelectionTables')
 ```
+#Make Raven Selection Table
 ```{r}
 #run function to make raven table
 
 makeRavenTable(encID, chan, detTime, peakFreq, thr_RL)
 ```
+#Edit Raven Selection Table
+```{r}
+ravTab <- read.table( paste0(savePath, '/', encID, '_totalDetections_', thr_RL,'RL_hp', chan, '.selections.txt'), sep = "\t", header = T )
+ravTab[ravTab== ""] <- NA  #changes  blanks to NA
+                     
+ravTabDF <- ravTab %>%  fill(ClickStatus, Notes) %>% rename('Begin Time (s)' = Begin.Time..s., 'End Time (s)' = End.Time..s., 'Low Freq (Hz)' = Low.Freq..Hz., 'High Freq (Hz)' = High.Freq..Hz.)
+  
+#remove false detections and sort by time
+ravTabDFtrue <- ravTabDF %>% filter(ClickStatus == 't') %>% arrange(`Begin Time (s)`)
+
+write.table(ravTabDFtrue, paste0(savePath, '/', encID, '_totalDetections_', thr_RL,'RL_hp', chan, '_EDIT.selections.txt') , row.names = F, sep = "\t", quote=F)
+
+```
+#Calculations
+```{r}
+totalClicks = nrow(ravTabDFtrue)
+
+#get total time between first and last click
+
+#calc ICI by following some of Taiki's code in PAMpal
+```
+
 

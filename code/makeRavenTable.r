@@ -53,7 +53,7 @@ selTable$Notes = ''
 # selTable$`High Freq (Hz)` = round(selTable$`High Freq (Hz)`, 1) 
 
 
-write.table(selTable, paste0(here::here('data/CloseWhale4km/RavenSelectionTables', paste0(encID,'_totalDetections_', rL,'RL_hp', chan, '.selections.txt') )) , row.names = F, sep = "\t", quote=F)
+write.table(selTable, paste0(savePath, '/', encID, '_totalDetections_', rL,'RL_hp', chan, '.selections.txt') , row.names = F, sep = "\t", quote=F)
 
 # write.table(selTable, paste0('C:\\Users\\yvers\\Documents\\CRP\\ACCURATE\\data\\CloseWhale4km\\LF_1706.A33.S15\\LF1706A33S15_totalDetector.selections.txt'), row.names = F, sep = "\t", quote=F)
 # write.table(selTable, pate0('C:\\Users\\yvers\\Documents\\CRP\\ACCURATE\\data\\CloseWhale4km\\LF_1706.A33.S15\\detectorravenDF_loud\\LF1706A33S15_loudravenDF.selections.txt', row.names = F, sep = "\t", quote=F)
