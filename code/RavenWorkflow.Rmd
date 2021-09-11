@@ -16,9 +16,9 @@ library(tidyverse)
 
 #Set Up Data
 ```{r}
-crz = 1706
-acid = 271
-sid = 131
+crz = 1705
+acid = 196
+sid = 999
 thr_RL = 50
 # encID <- paste0('LF_', crz, '.A', acid, '.S', sid)
 encID <- paste0(crz, 'A', acid, 'S', sid)
@@ -39,17 +39,31 @@ savePath = here::here('data/CloseWhale4km/RavenSelectionTables')
 
 makeRavenTable(encID, chan, detTime, peakFreq, thr_RL)
 ```
+
+#Check Megan Wood's Work
+```{r}
+savePath2 = here::here('data/CloseWhale4km/RavenSelectionTables/final')
+
+
+
+```
+
+
 #Edit Raven Selection Table
 ```{r}
-ravTab <- read.table( paste0(savePath, '/', encID, '_totalDetections_', thr_RL,'RL_hp', chan, '.selections.txt'), sep = "\t", header = T )
+ravTab <- read.table( paste0(savePath2, '/', encID, '_totalDetections_', thr_RL,'RL_hp', chan, '_MW_YB.selections.txt'), sep = "\t", header = T )
 ravTab[ravTab== ""] <- NA  #changes  blanks to NA
-                     
-ravTabDF <- ravTab %>%  fill(ClickStatus, Notes) %>% rename('Begin Time (s)' = Begin.Time..s., 'End Time (s)' = End.Time..s., 'Low Freq (Hz)' = Low.Freq..Hz., 'High Freq (Hz)' = High.Freq..Hz.)
+           
+# fill in the blanks for 't' or 'f' under ClickStatus and the click type, rename columns          
+ravTabDF <- ravTab %>%  fill(ClickStatus, ClickType) %>% rename('Begin Time (s)' = Begin.Time..s., 'End Time (s)' = End.Time..s., 'Low Freq (Hz)' = Low.Freq..Hz., 'High Freq (Hz)' = High.Freq..Hz.)
   
 #remove false detections and sort by time
 ravTabDFtrue <- ravTabDF %>% filter(ClickStatus == 't') %>% arrange(`Begin Time (s)`)
 
-write.table(ravTabDFtrue, paste0(savePath, '/', encID, '_totalDetections_', thr_RL,'RL_hp', chan, '_EDIT.selections.txt') , row.names = F, sep = "\t", quote=F)
+#renumber selections
+ravTabDFtrue$Selection <- 1:nrow(ravTabDFtrue)
+
+write.table(ravTabDFtrue, paste0(savePath2, '/', encID, '_totalDetections_', thr_RL,'RL_hp', chan, '_EDIT.selections.txt') , row.names = F, sep = "\t", quote=F)
 
 ```
 #Calculations
@@ -58,7 +72,26 @@ totalClicks = nrow(ravTabDFtrue)
 
 #get total time between first and last click
 
-#calc ICI by following some of Taiki's code in PAMpal
+#calc ICI (https://github.com/TaikiSan21/PAMpal/blob/master/R/calculateICI.R)
+
+ici <- as.data.frame(diff(ravTabDFtrue$`Begin Time (s)`))
+
+#filter out ici > 10s
+iciSilent <- filter(ici, ici >= 10)
+iciReg <- filter(ici, ici < 2)
+
+colnames(ici) <-'ici'
+qplot(iciNorm$ici, geom='histogram', binwidth = 0.09)
+
 ```
 
+```{r}
+#for groundtruthed 1706A33S15
+#remove false detections and sort by time
+ravTabDFtrue <- ravTabDF %>% filter(ClickStatus == 'TP' | ClickStatus == 'FN') %>% arrange(`Begin Time (s)`)
+#change ClickStatus to t
+ravTabDFtrue$ClickStatus <- 't'
+write.table(ravTabDFtrue, paste0(savePath, '/', encID, '_totalDetections_', thr_RL,'RL_hp', chan, '_EDIT.selections.txt') , row.names = F, sep = "\t", quote=F)
+
+```
 
