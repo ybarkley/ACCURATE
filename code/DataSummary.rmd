@@ -1,4 +1,8 @@
 ---
+title: "Summarize Data for ACCURATE"
+author: "Yvonne Barkley"
+date: "7/3/2021"
+output: html_document
 editor_options: 
   chunk_output_type: console
 ---
@@ -7,11 +11,6 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
 library(gtsummary)
@@ -24,7 +23,10 @@ library(here)
 ```{r}
 #### PhD Data ####
 # Load basic csv of all ac. encounters used for PHD Chp 3
-data <- read.csv(here::here('./data/SpermiesWithEnvData_20200531.csv'))
+# data <- read.csv(here::here('./data/SpermiesWithEnvData_20200531.csv')) #not sure when/if this was used...
+
+data <- read.csv(here::here('./data/SpermiesFinal_20210901.csv')) #this was def made in 2021 for ACCURATE by YB
+
 
 #remove 1642 cruise, data were too noisy
 data <- filter(data, survey != 1642)
@@ -217,15 +219,16 @@ ggplot(data=dataCodaNone,
 
 #All Acoustics Only vs Sighted - NO CODA
 ```{r}
+
 #convert negative distances to normal distances
 dataCodaNone$dist <- ifelse(dataCodaNone$pdist <0, dataCodaNone$pdist*(-1), dataCodaNone$pdist)
 
 #### CLOSE WHALES - ALL ####
 #plotting only whales less than 4 km away
-dataCloseWhales <- dataCodaNone %>% filter(dist < 4, rating >1) %>%
+dataCloseWhales <- dataCodaNone %>% dplyr::filter(dist <= 5, rating >1) %>%
   select(ID, survey, acid, sid, UTC, lat, lon, nclk, minutes, grpsize, click_code, array, year, label, dist, rating)
 
-write.csv(dataCloseWhales, here::here('./data/Spermie Data-2021-CloseWhales4km.csv'), row.names = FALSE )
+write.csv(dataCloseWhales, here::here('./data/ACCURATE-CloseWhales5km.csv'), row.names = FALSE )
 
 #Simple histogram of close whales by click type
 ggplot(data=dataCloseWhales,
