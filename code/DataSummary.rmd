@@ -102,7 +102,7 @@ dataVisCoda$clickbin <- 'coda'
 dataVisCodaNone <- filter(dataCodaNone, label == 'sighted')
 dataVisCodaNone$clickbin <- 'no_coda'
 
-dataVis <- rbind(dataVisCoda, dataVisCodaNone)
+dataVis <- bind_rows(dataVisCoda, dataVisCodaNone)
 dataVis$grpsizebin <- cut(dataVis$grpsize, 5, include.lowest = TRUE)
 
 tabylVis <- dataVis %>% tabyl(click_code, grpsizebin, clickbin) %>%
@@ -195,7 +195,7 @@ pCoda <- ggplot(data=dataCoda,
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 
-#Localized vs Sighted - NO CODA
+#Plot Localized vs Sighted - NO CODA
 ```{r}
 
 ggplot(data=dataCodaNone,
@@ -217,7 +217,7 @@ ggplot(data=dataCodaNone,
 
 ```
 
-#All Acoustics Only vs Sighted - NO CODA
+#All Acoustics Only & Sighted - NO CODA
 ```{r}
 
 #convert negative distances to normal distances
@@ -253,7 +253,7 @@ dataCloseVis <- filter(dataCloseWhales, sid <999)
 
 dataCloseVis$grpsizebin <- cut(dataCloseVis$grpsize, 10, include.lowest = TRUE)
 
-## Plot group size bins for close whales < 4km
+### Plot group size bins for close whales < 4km ####
 
 ggplot(data=dataCloseVis,
        mapping = aes(x=grpsize, fill = click_code)) +
@@ -291,6 +291,16 @@ ggplot(data=dataCloseLoc,
         axis.title.y = element_text(size=15),
            axis.text.y  = element_text(size=16),
         plot.title = element_text(size=20))
+
+```
+```{r}
+#### FAR WHALES - ALL ####
+
+dataFarWhales <- dataCodaNone %>% dplyr::filter(dist > 5, rating >1) %>%
+  select(ID, survey, acid, sid, UTC, lat, lon, nclk, minutes, grpsize, click_code, array, year, label, dist, rating)
+
+write.csv(dataFarWhales, here::here('./data/ACCURATE-FarWhales.csv'), row.names = FALSE )
+
 
 ```
 

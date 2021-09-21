@@ -45,6 +45,7 @@ selTable = ravenDF[ , c(5:7, 1:4)]
 selTable$View = as.factor(selTable$View)
 
 selTable$ClickStatus =''
+selTable$ClickType=''
 selTable$Notes = ''
 
 # selTable$`Begin Time (s)` = round(selTable$`Begin Time (s)`, 5) 
